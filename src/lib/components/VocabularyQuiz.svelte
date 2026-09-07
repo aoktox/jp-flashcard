@@ -69,6 +69,7 @@
 	let wrongItems: Map<string, WrongItem> = $state(new Map());
 	let roundCorrect = $state(0);
 	let roundTotal = $state(0);
+	let quizStarted = $state(false);
 
 	async function startQuiz() {
 		loading = true;
@@ -94,12 +95,8 @@
 		roundCorrect = 0;
 		roundTotal = 0;
 		loading = false;
+		quizStarted = true;
 	}
-
-	$effect(() => {
-		levels;
-		startQuiz();
-	});
 
 	let lastCorrect = $state(false);
 
@@ -227,21 +224,31 @@
 		</div>
 	</div>
 
-	<div
-		class="dark:bg-gray-700/50 flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2"
-	>
-		<span class="dark:text-gray-300 text-sm text-gray-600">
-			Progress: <span class="font-bold dark:text-white">{roundTotal}</span> / {questions.length} words
-		</span>
-	</div>
-
-	{#if loading}
+	{#if !quizStarted}
+		<div class="flex flex-col items-center gap-4 py-8">
+			<p class="dark:text-gray-400 text-gray-500">Select JLPT levels, then start the quiz.</p>
+			<button
+				onclick={() => startQuiz()}
+				class="rounded-lg bg-purple-600 px-8 py-3 text-lg font-medium text-white transition-colors hover:bg-purple-700"
+			>
+				Start Quiz
+			</button>
+		</div>
+	{:else if loading}
 		<div class="flex items-center justify-center py-12">
 			<div
 				class="h-8 w-8 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600"
 			></div>
 		</div>
 	{:else if !quizDone && current}
+		<div
+			class="dark:bg-gray-700/50 flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2"
+		>
+			<span class="dark:text-gray-300 text-sm text-gray-600">
+				Progress: <span class="font-bold dark:text-white">{roundTotal}</span> / {questions.length} words
+			</span>
+		</div>
+
 		<div class="dark:bg-gray-700/30 rounded-lg bg-gray-100 p-1">
 			<div
 				class="h-1.5 rounded-lg bg-purple-500 transition-all duration-300"

@@ -18,7 +18,7 @@
 	let hiragana: HiraganaData | null = $state(null);
 	let katakana: KatakanaData | null = $state(null);
 	let special: SpecialData | null = $state(null);
-	let loading = $state(true);
+	let loading = $state(false);
 
 	let mode: QuizMode = $state('hiragana');
 	let rows: string[] = $state(['a']);
@@ -44,6 +44,7 @@
 	let roundCorrect = $state(0);
 	let roundTotal = $state(0);
 	let quizDone = $state(false);
+	let quizStarted = $state(false);
 	let allRomaji: string[] = $state([]);
 
 	async function loadData() {
@@ -129,14 +130,8 @@
 		roundCorrect = 0;
 		roundTotal = 0;
 		quizDone = false;
+		quizStarted = true;
 	}
-
-	$effect(() => {
-		mode;
-		rows;
-		specials;
-		startQuiz();
-	});
 
 	function handleAnswer(isCorrect: boolean) {
 		roundTotal++;
@@ -174,21 +169,31 @@
 <div class="flex flex-col gap-5">
 	<ModeSelector />
 
-	<div
-		class="dark:bg-gray-700/50 flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2"
-	>
-		<span class="dark:text-gray-300 text-sm text-gray-600">
-			Progress: <span class="font-bold dark:text-white">{roundTotal}</span> / {queue.length} characters
-		</span>
-	</div>
-
-	{#if loading}
+	{#if !quizStarted}
+		<div class="flex flex-col items-center gap-4 py-8">
+			<p class="dark:text-gray-400 text-gray-500">Select a mode and characters, then start the quiz.</p>
+			<button
+				onclick={() => startQuiz()}
+				class="rounded-lg bg-blue-600 px-8 py-3 text-lg font-medium text-white transition-colors hover:bg-blue-700"
+			>
+				Start Quiz
+			</button>
+		</div>
+	{:else if loading}
 		<div class="flex items-center justify-center py-12">
 			<div
 				class="h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"
 			></div>
 		</div>
 	{:else if !quizDone && current}
+		<div
+			class="dark:bg-gray-700/50 flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2"
+		>
+			<span class="dark:text-gray-300 text-sm text-gray-600">
+				Progress: <span class="font-bold dark:text-white">{roundTotal}</span> / {queue.length} characters
+			</span>
+		</div>
+
 		<div class="dark:bg-gray-700/30 rounded-lg bg-gray-100 p-1">
 			<div
 				class="h-1.5 rounded-lg bg-blue-500 transition-all duration-300"
@@ -236,10 +241,6 @@
 			>
 				Try Again
 			</button>
-		</div>
-	{:else}
-		<div class="flex flex-col items-center gap-4 py-8">
-			<p class="dark:text-gray-400 text-gray-500">Select a mode and row to start the quiz.</p>
 		</div>
 	{/if}
 </div>
