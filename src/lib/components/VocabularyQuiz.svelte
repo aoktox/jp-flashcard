@@ -225,11 +225,10 @@
 	</div>
 
 	{#if !quizStarted}
-		<div class="flex flex-col items-center gap-4 py-8">
-			<p class="dark:text-gray-400 text-gray-500">Select JLPT levels, then start the quiz.</p>
+		<div class="flex flex-col items-center gap-4">
 			<button
 				onclick={() => startQuiz()}
-				class="rounded-lg bg-purple-600 px-8 py-3 text-lg font-medium text-white transition-colors hover:bg-purple-700"
+				class="w-full rounded-lg bg-purple-600 px-8 py-4 text-xl font-semibold text-white transition-colors hover:bg-purple-700 active:scale-[0.98]"
 			>
 				Start Quiz
 			</button>
@@ -269,7 +268,7 @@
 					<button
 						onclick={() => handleAnswer(option)}
 						disabled={showDetail}
-						class="rounded-xl border-2 px-4 py-3 text-center text-sm font-medium transition-all duration-200
+						class="rounded-xl border-2 px-4 py-5 text-center text-lg font-medium transition-all duration-200
 							dark:text-white {optionClass(option)}
 							{showDetail ? 'cursor-default' : 'cursor-pointer active:scale-95'}"
 					>

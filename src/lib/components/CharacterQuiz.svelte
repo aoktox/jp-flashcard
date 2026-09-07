@@ -170,11 +170,10 @@
 	<ModeSelector />
 
 	{#if !quizStarted}
-		<div class="flex flex-col items-center gap-4 py-8">
-			<p class="dark:text-gray-400 text-gray-500">Select a mode and characters, then start the quiz.</p>
+		<div class="flex flex-col items-center gap-4">
 			<button
 				onclick={() => startQuiz()}
-				class="rounded-lg bg-blue-600 px-8 py-3 text-lg font-medium text-white transition-colors hover:bg-blue-700"
+				class="w-full rounded-lg bg-blue-600 px-8 py-4 text-xl font-semibold text-white transition-colors hover:bg-blue-700 active:scale-[0.98]"
 			>
 				Start Quiz
 			</button>

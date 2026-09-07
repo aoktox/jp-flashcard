@@ -113,7 +113,7 @@
 			<button
 				onclick={() => pick(option)}
 				disabled={showResult}
-				class="rounded-xl border-2 px-4 py-3 text-center text-sm font-medium transition-all duration-200
+				class="rounded-xl border-2 px-4 py-5 text-center text-lg font-medium transition-all duration-200
 					dark:text-white {optionClass(option)}
 					{showResult ? 'cursor-default' : 'cursor-pointer active:scale-95'}"
 			>
