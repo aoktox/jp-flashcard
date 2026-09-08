@@ -31,4 +31,5 @@ export const quizMode = writable<QuizMode>('hiragana');
 export const selectedRows = writable<string[]>(['a']);
 export const selectedSpecials = writable<string[]>([]);
 export const selectedLevels = writable<('N5' | 'N4' | 'N3' | 'N2' | 'N1')[]>(['N5']);
+export const selectedCategories = writable<string[]>([]);
 export const darkMode = createPersistent<boolean>('jp-dark-mode', false);

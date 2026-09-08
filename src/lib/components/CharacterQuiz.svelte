@@ -46,6 +46,7 @@
 	let quizDone = $state(false);
 	let quizStarted = $state(false);
 	let allRomaji: string[] = $state([]);
+	let timerDuration = $state(5);
 
 	async function loadData() {
 		loading = true;
@@ -170,7 +171,25 @@
 	<ModeSelector />
 
 	{#if !quizStarted}
-		<div class="flex flex-col items-center gap-4">
+		<div class="flex flex-col gap-4">
+			<div>
+				<span class="dark:text-gray-300 mb-1 block text-sm font-medium text-gray-700">
+					Timer: {timerDuration}s
+				</span>
+				<input
+					type="range"
+					min="1"
+					max="20"
+					step="1"
+					bind:value={timerDuration}
+					aria-label="Timer duration"
+					class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-blue-600 dark:bg-gray-700"
+				/>
+				<div class="mt-1 flex justify-between text-xs text-gray-400 dark:text-gray-500">
+					<span>1s</span>
+					<span>20s</span>
+				</div>
+			</div>
 			<button
 				onclick={() => startQuiz()}
 				class="w-full rounded-lg bg-blue-600 px-8 py-4 text-xl font-semibold text-white transition-colors hover:bg-blue-700 active:scale-[0.98]"
@@ -208,6 +227,7 @@
 			exampleDisplay={current.exampleDisplay}
 			onAnswer={handleAnswer}
 			large={specials.length === 0}
+			{timerDuration}
 		/>
 	{:else if quizDone}
 		<div class="flex flex-col items-center gap-4 py-8">

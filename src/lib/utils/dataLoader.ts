@@ -19,6 +19,7 @@ export type VocabItem = {
 	hiragana: string;
 	romaji: string;
 	meaning: string;
+	category: string;
 	example: string;
 	exampleRomaji: string;
 	exampleMeaning: string;

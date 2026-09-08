@@ -1,13 +1,21 @@
 <script lang="ts">
-	import { getVocabulary, JLPT_LEVELS, type VocabData, type JlptLevel } from '$lib/utils/dataLoader';
-	import { selectedLevels } from '$lib/stores/quizStore';
+	import { getVocabulary, JLPT_LEVELS, type VocabData, type VocabItem, type JlptLevel } from '$lib/utils/dataLoader';
+	import { selectedLevels, selectedCategories } from '$lib/stores/quizStore';
 	import { shuffle, generateOptions } from '$lib/utils/quizLogic';
 
 	let levels: JlptLevel[] = $state(['N5']);
+	let categories: string[] = $state([]);
 	selectedLevels.subscribe((v) => (levels = v));
+	selectedCategories.subscribe((v) => (categories = v));
 
-	let open = $state(false);
-	let dropdownEl: HTMLDivElement | undefined = $state();
+	let levelOpen = $state(false);
+	let levelDropdownEl: HTMLDivElement | undefined = $state();
+
+	let catOpen = $state(false);
+	let catDropdownEl: HTMLDivElement | undefined = $state();
+
+	let availableCategories: string[] = $state([]);
+	let loadedWords: VocabItem[] = $state([]);
 
 	function toggleLevel(lvl: JlptLevel) {
 		const current = [...levels];
@@ -22,31 +30,68 @@
 		}
 	}
 
-	function selectAll() {
+	function selectAllLevels() {
 		selectedLevels.set([...JLPT_LEVELS]);
 	}
 
+	function toggleCategory(cat: string) {
+		const current = [...categories];
+		const idx = current.indexOf(cat);
+		if (idx >= 0) {
+			current.splice(idx, 1);
+			selectedCategories.set(current);
+		} else {
+			selectedCategories.set([...current, cat]);
+		}
+	}
+
+	function selectAllCategories() {
+		selectedCategories.set([...availableCategories]);
+	}
+
 	function handleClickOutside(e: MouseEvent) {
-		if (dropdownEl && !dropdownEl.contains(e.target as Node)) {
-			open = false;
+		if (levelDropdownEl && !levelDropdownEl.contains(e.target as Node)) {
+			levelOpen = false;
+		}
+		if (catDropdownEl && !catDropdownEl.contains(e.target as Node)) {
+			catOpen = false;
 		}
 	}
 
 	$effect(() => {
-		if (open) {
+		if (levelOpen || catOpen) {
 			document.addEventListener('click', handleClickOutside, true);
 			return () => document.removeEventListener('click', handleClickOutside, true);
 		}
 	});
 
-	let summaryText = $derived.by(() => {
+	async function loadCategories() {
+		const datasets = await Promise.all(levels.map((lvl) => getVocabulary(lvl)));
+		loadedWords = datasets.flatMap((d) => d.words);
+		const cats = [...new Set(loadedWords.map((w) => w.category))].sort();
+		availableCategories = cats;
+		selectedCategories.set(cats);
+	}
+
+	$effect(() => {
+		levels;
+		loadCategories();
+	});
+
+	let levelSummary = $derived.by(() => {
 		const sorted = [...levels].sort((a, b) => JLPT_LEVELS.indexOf(a) - JLPT_LEVELS.indexOf(b));
 		if (sorted.length <= 3) return sorted.join(', ');
 		return `${sorted.slice(0, 2).join(', ')} +${sorted.length - 2} more`;
 	});
 
+	let catSummary = $derived.by(() => {
+		if (categories.length === availableCategories.length) return 'All categories';
+		if (categories.length <= 2) return categories.join(', ');
+		return `${categories.slice(0, 1).join(', ')} +${categories.length - 1} more`;
+	});
+
 	let vocab: VocabData | null = $state(null);
-	let loading = $state(true);
+	let loading = $state(false);
 
 	type VocabQuestion = {
 		display: string;
@@ -70,13 +115,13 @@
 	let roundCorrect = $state(0);
 	let roundTotal = $state(0);
 	let quizStarted = $state(false);
+	let showExampleOnWrong = $state(false);
 
 	async function startQuiz() {
 		loading = true;
-		const datasets = await Promise.all(levels.map((lvl) => getVocabulary(lvl)));
-		const allWords = datasets.flatMap((d) => d.words);
-		vocab = { words: allWords };
-		const words = shuffle(allWords);
+		const filtered = loadedWords.filter((w) => categories.includes(w.category));
+		vocab = { words: filtered };
+		const words = shuffle(filtered);
 		questions = words.map((w) => ({
 			display: w.kanji,
 			subtitle: w.meaning,
@@ -86,7 +131,7 @@
 			exampleMeaning: w.exampleMeaning,
 			hiragana: w.hiragana
 		}));
-		allMeanings = [...new Set(allWords.map((w) => w.meaning))];
+		allMeanings = [...new Set(loadedWords.map((w) => w.meaning))];
 		currentIndex = 0;
 		quizDone = false;
 		showDetail = false;
@@ -130,7 +175,7 @@
 
 		showDetail = true;
 
-		if (!isCorrect) {
+		if (!isCorrect && !showExampleOnWrong) {
 			setTimeout(() => advance(), 1200);
 		}
 	}
@@ -167,19 +212,19 @@
 </script>
 
 <div class="flex flex-col gap-5">
-	<div class="flex items-end gap-3">
-		<div class="relative min-w-[160px] flex-1" bind:this={dropdownEl}>
+	<div class="flex flex-wrap gap-3">
+		<div class="relative min-w-[140px] flex-1" bind:this={levelDropdownEl}>
 			<span class="dark:text-gray-300 mb-1 block text-sm font-medium text-gray-700">JLPT Level</span>
 			<button
 				type="button"
 				aria-haspopup="listbox"
-				aria-expanded={open}
-				onclick={() => (open = !open)}
+				aria-expanded={levelOpen}
+				onclick={() => (levelOpen = !levelOpen)}
 				class="dark:border-gray-600 dark:bg-gray-700 dark:text-white flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none"
 			>
-				<span class="truncate">{summaryText}</span>
+				<span class="truncate">{levelSummary}</span>
 				<svg
-					class="ml-2 h-4 w-4 shrink-0 text-gray-400 transition-transform {open ? 'rotate-180' : ''}"
+					class="ml-2 h-4 w-4 shrink-0 text-gray-400 transition-transform {levelOpen ? 'rotate-180' : ''}"
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
@@ -189,12 +234,12 @@
 				</svg>
 			</button>
 
-			{#if open}
+			{#if levelOpen}
 				<div class="dark:border-gray-600 dark:bg-gray-800 absolute z-10 mt-1 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
 					<div class="flex items-center justify-between border-b border-gray-100 px-3 py-1.5 dark:border-gray-700">
 						<span class="text-xs font-semibold tracking-wide text-gray-400 uppercase dark:text-gray-500">Levels</span>
 						<button
-							onclick={selectAll}
+							onclick={selectAllLevels}
 							class="text-xs text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
 						>Select all</button>
 					</div>
@@ -222,10 +267,83 @@
 				</div>
 			{/if}
 		</div>
+
+		<div class="relative min-w-[200px] flex-1" bind:this={catDropdownEl}>
+			<span class="dark:text-gray-300 mb-1 block text-sm font-medium text-gray-700">Category</span>
+			<button
+				type="button"
+				aria-haspopup="listbox"
+				aria-expanded={catOpen}
+				onclick={() => (catOpen = !catOpen)}
+				class="dark:border-gray-600 dark:bg-gray-700 dark:text-white flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none"
+			>
+				<span class="truncate">{catSummary}</span>
+				<svg
+					class="ml-2 h-4 w-4 shrink-0 text-gray-400 transition-transform {catOpen ? 'rotate-180' : ''}"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="2"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+				</svg>
+			</button>
+
+			{#if catOpen}
+				<div class="dark:border-gray-600 dark:bg-gray-800 absolute z-10 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+					<div class="flex items-center justify-between border-b border-gray-100 px-3 py-1.5 dark:border-gray-700">
+						<span class="text-xs font-semibold tracking-wide text-gray-400 uppercase dark:text-gray-500">Categories</span>
+						<div class="flex gap-2">
+							<button
+								onclick={selectAllCategories}
+								class="text-xs text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+							>All</button>
+							<button
+								onclick={() => selectedCategories.set([])}
+								class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+							>None</button>
+						</div>
+					</div>
+					{#each availableCategories as cat}
+						<button
+							type="button"
+							onclick={() => toggleCategory(cat)}
+							class="dark:hover:bg-gray-700 flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+						>
+							<span
+								class="flex h-4 w-4 shrink-0 items-center justify-center rounded border
+									{categories.includes(cat)
+									? 'border-purple-500 bg-purple-500 text-white'
+									: 'border-gray-300 dark:border-gray-600'}"
+							>
+								{#if categories.includes(cat)}
+									<svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+										<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+									</svg>
+								{/if}
+							</span>
+							<span class="dark:text-gray-200 text-gray-700">{cat}</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	</div>
 
 	{#if !quizStarted}
-		<div class="flex flex-col items-center gap-4">
+		<div class="flex flex-col gap-4">
+			<label class="flex items-center gap-3 cursor-pointer">
+				<div class="relative">
+					<input
+						type="checkbox"
+						bind:checked={showExampleOnWrong}
+						class="sr-only peer"
+					/>
+					<div class="h-6 w-11 rounded-full bg-gray-300 peer-checked:bg-purple-600 dark:bg-gray-600 peer-checked:dark:bg-purple-600 transition-colors"></div>
+					<div class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5 shadow-sm"></div>
+				</div>
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Show example on wrong answer</span>
+			</label>
 			<button
 				onclick={() => startQuiz()}
 				class="w-full rounded-lg bg-purple-600 px-8 py-4 text-xl font-semibold text-white transition-colors hover:bg-purple-700 active:scale-[0.98]"
@@ -277,9 +395,12 @@
 				{/each}
 			</div>
 
-			{#if showDetail && lastCorrect}
+			{#if showDetail && (lastCorrect || showExampleOnWrong)}
 				<div class="dark:border-gray-700 dark:bg-gray-800 w-full rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-					<p class="mb-1 text-xs font-medium text-green-600 dark:text-green-400">Example</p>
+					<p class="mb-1 text-xs font-medium {lastCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+						{lastCorrect ? 'Correct!' : `Answer: ${current.correct}`}
+					</p>
+					<p class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">Example</p>
 					<p class="dark:text-white text-gray-900">{current.example}</p>
 					<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{current.exampleRomaji}</p>
 					<p class="mt-1 text-sm text-gray-400 dark:text-gray-500 italic">{current.exampleMeaning}</p>

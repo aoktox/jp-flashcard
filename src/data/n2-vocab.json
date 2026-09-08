@@ -1,5 +1,5 @@
 {
   "words": [
-    { "id": 1, "kanji": "影響", "hiragana": "えいきょう", "romaji": "eikyou", "meaning": "influence", "example": "環境に影響を与えます", "exampleRomaji": "Kankyou ni eikyou o ataemasu", "exampleMeaning": "It affects the environment" }
+    { "id": 1, "kanji": "影響", "hiragana": "えいきょう", "romaji": "eikyou", "meaning": "influence","category":"N/A", "example": "環境に影響を与えます", "exampleRomaji": "Kankyou ni eikyou o ataemasu", "exampleMeaning": "It affects the environment" }
   ]
 }

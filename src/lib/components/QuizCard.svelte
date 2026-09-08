@@ -9,9 +9,10 @@
 		exampleDisplay?: string;
 		onAnswer: (correct: boolean) => void;
 		large?: boolean;
+		timerDuration?: number;
 	};
 
-	let { display, options, correct, example, exampleDisplay, onAnswer, large = false }: Props = $props();
+	let { display, options, correct, example, exampleDisplay, onAnswer, large = false, timerDuration = 5 }: Props = $props();
 
 	let selected: string | null = $state(null);
 	let showResult = $state(false);
@@ -27,7 +28,7 @@
 
 	function startTimer() {
 		stopTimer();
-		timeLeft = 5;
+		timeLeft = timerDuration;
 		timerId = setInterval(() => {
 			timeLeft -= 0.05;
 			if (timeLeft <= 0) {
@@ -64,9 +65,9 @@
 		return () => stopTimer();
 	});
 
-	let timerPercent = $derived(Math.max(0, (timeLeft / 5) * 100));
+	let timerPercent = $derived(Math.max(0, (timeLeft / timerDuration) * 100));
 	let timerColor = $derived(
-		timeLeft > 2.5 ? 'bg-blue-500' : timeLeft > 1 ? 'bg-yellow-500' : 'bg-red-500'
+		timerPercent > 50 ? 'bg-blue-500' : timerPercent > 20 ? 'bg-yellow-500' : 'bg-red-500'
 	);
 
 	function optionClass(option: string): string {
